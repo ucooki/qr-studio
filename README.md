@@ -6,6 +6,8 @@ A local network QR code generator — no subscriptions, no watermarks, no data l
 
 ```bash
 cd qr-studio
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
