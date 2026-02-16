@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Studio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg: #f6f3ee;
+            --surface: #ffffff;
+            --surface-alt: #ece8e1;
+            --border: #ddd7cc;
+            --border-focus: #b8a88a;
+            --accent: #c4713b;
+            --accent-hover: #a85d2f;
+            --accent-soft: #f0ddd0;
+            --text: #2c2416;
+            --text-mid: #6b5d4d;
+            --text-dim: #a39685;
+            --ink: #1a1208;
+            --radius: 14px;
+            --radius-sm: 10px;
+        }
+
+        body {
+            font-family: 'DM Sans', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ── LAYOUT ───────────────────────────── */
+        .shell {
+            max-width: 920px;
+            margin: 0 auto;
+            padding: 48px 24px 80px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 48px;
+        }
+
+        header .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--accent);
+            margin-bottom: 14px;
+        }
+
+        header .badge .icon {
+            width: 22px; height: 22px;
+            background: var(--accent);
+            border-radius: 6px;
+            display: grid;
+            grid-template: repeat(3, 1fr) / repeat(3, 1fr);
+            padding: 4px; gap: 1.5px;
+        }
+
+        header .badge .icon span {
+            border-radius: 1px;
+        }
+
+        header .badge .icon span.on  { background: rgba(255,255,255,.92); }
+        header .badge .icon span.off { background: rgba(255,255,255,.2); }
+
+        header h1 {
+            font-family: 'DM Serif Display', serif;
+            font-size: clamp(28px, 5vw, 42px);
+            font-weight: 400;
+            letter-spacing: -0.02em;
+            line-height: 1.15;
+            color: var(--ink);
+        }
+
+        header p {
+            color: var(--text-mid);
+            font-size: 15px;
+            font-weight: 300;
+            margin-top: 8px;
+        }
+
+        .main {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 28px;
+            align-items: start;
+        }
+
+        @media (max-width: 680px) {
+            .main { grid-template-columns: 1fr; }
+            .preview-card { order: -1; }
+        }
+
+        /* ── CARDS ────────────────────────────── */
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 28px;
+        }
+
+        /* ── FORM CONTROLS ────────────────────── */
+        .field { margin-bottom: 22px; }
+        .field:last-child { margin-bottom: 0; }
+
+        .field-label {
+            display: block;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-dim);
+            margin-bottom: 8px;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 14px 16px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            color: var(--text);
+            background: var(--bg);
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-sm);
+            resize: vertical;
+            outline: none;
+            transition: border-color .2s, box-shadow .2s;
+            min-height: 88px;
+        }
+
+        textarea:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-soft);
+        }
+
+        textarea::placeholder { color: var(--text-dim); }
+
+        .char-count {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--text-dim);
+            margin-top: 6px;
+            text-align: right;
+        }
+
+        .char-count.warn  { color: #c4713b; }
+        .char-count.error { color: #c0392b; }
+
+        /* Toggle groups */
+        .toggle-row {
+            display: flex;
+            gap: 6px;
+        }
+
+        .toggle-btn {
+            flex: 1;
+            padding: 10px 6px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-mid);
+            background: var(--bg);
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all .18s;
+            text-align: center;
+            line-height: 1.35;
+        }
+
+        .toggle-btn:hover { border-color: var(--border-focus); }
+
+        .toggle-btn.active {
+            background: var(--accent-soft);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .toggle-btn .sub {
+            display: block;
+            font-size: 10px;
+            font-family: 'JetBrains Mono', monospace;
+            opacity: .55;
+            margin-top: 1px;
+        }
+
+        /* Color pickers */
+        .color-row {
+            display: flex;
+            gap: 12px;
+        }
+
+        .color-field {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            background: var(--bg);
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-sm);
+            transition: border-color .2s;
+        }
+
+        .color-field:focus-within {
+            border-color: var(--accent);
+        }
+
+        .color-field input[type="color"] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 28px; height: 28px;
+            border: 1.5px solid var(--border);
+            border-radius: 7px;
+            cursor: pointer;
+            padding: 0;
+            background: transparent;
+        }
+
+        .color-field input[type="color"]::-webkit-color-swatch-wrapper { padding: 2px; }
+        .color-field input[type="color"]::-webkit-color-swatch { border-radius: 4px; border: none; }
+
+        .color-meta { flex: 1; }
+        .color-meta .label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: .06em; }
+        .color-meta .hex { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-mid); }
+
+        /* Presets */
+        .preset-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+            margin-bottom: 14px;
+        }
+
+        .preset-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 10px;
+            background: var(--bg);
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all .18s;
+            font-family: 'DM Sans', sans-serif;
+        }
+
+        .preset-btn:hover { border-color: var(--border-focus); }
+        .preset-btn.active { border-color: var(--accent); background: var(--accent-soft); }
+
+        .preset-swatch {
+            width: 22px; height: 22px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .preset-swatch .dot {
+            width: 10px; height: 10px;
+            border-radius: 2px;
+        }
+
+        .preset-btn .name {
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--text-mid);
+        }
+
+        /* ── PREVIEW CARD ─────────────────────── */
+        .preview-card {
+            position: sticky;
+            top: 24px;
+        }
+
+        .preview-frame {
+            width: 100%;
+            aspect-ratio: 1;
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f0ece5;
+            border: 1px solid var(--border);
+            position: relative;
+        }
+
+        .preview-frame img {
+            max-width: 100%;
+            max-height: 100%;
+            image-rendering: pixelated;
+        }
+
+        .preview-placeholder {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .preview-placeholder .ghost {
+            width: 80px; height: 80px;
+            margin: 0 auto 16px;
+            opacity: .15;
+            display: grid;
+            grid-template: repeat(5,1fr) / repeat(5,1fr);
+            gap: 3px;
+        }
+
+        .preview-placeholder .ghost span {
+            background: var(--ink);
+            border-radius: 2px;
+        }
+
+        .preview-placeholder p {
+            font-size: 14px;
+            color: var(--text-dim);
+            font-weight: 300;
+        }
+
+        /* Download buttons */
+        .dl-row {
+            display: flex;
+            gap: 8px;
+            margin-top: 16px;
+        }
+
+        .dl-btn {
+            flex: 1;
+            padding: 12px 8px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all .18s;
+            text-align: center;
+            border: none;
+        }
+
+        .dl-btn.primary {
+            background: var(--accent);
+            color: #fff;
+        }
+        .dl-btn.primary:hover { background: var(--accent-hover); }
+        .dl-btn.primary:disabled { background: var(--surface-alt); color: var(--text-dim); cursor: default; }
+
+        .dl-btn.secondary {
+            background: var(--bg);
+            color: var(--text-mid);
+            border: 1.5px solid var(--border);
+        }
+        .dl-btn.secondary:hover { border-color: var(--border-focus); }
+        .dl-btn.secondary:disabled { color: var(--text-dim); cursor: default; }
+
+        /* ── FOOTER ───────────────────────────── */
+        .footer {
+            text-align: center;
+            margin-top: 48px;
+            font-size: 12px;
+            color: var(--text-dim);
+            font-weight: 300;
+        }
+
+        /* ── ANIMATIONS ──────────────────────── */
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(12px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        header        { animation: fadeUp .5s ease both; }
+        .controls     { animation: fadeUp .5s ease .1s both; }
+        .preview-card { animation: fadeUp .5s ease .2s both; }
+
+        .preview-frame img {
+            animation: scaleIn .25s ease both;
+        }
+
+        @keyframes scaleIn {
+            from { opacity: 0; transform: scale(.92); }
+            to   { opacity: 1; transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+<div class="shell">
+    <header>
+        <div class="badge">
+            <div class="icon">
+                <span class="on"></span><span class="off"></span><span class="on"></span>
+                <span class="off"></span><span class="on"></span><span class="off"></span>
+                <span class="on"></span><span class="off"></span><span class="on"></span>
+            </div>
+            QR Studio
+        </div>
+        <h1>Create QR&nbsp;codes</h1>
+    </header>
+
+    <div class="main">
+        <!-- Controls -->
+        <div class="controls">
+            <div class="card">
+                <!-- Content -->
+                <div class="field">
+                    <label class="field-label" for="qr-data">Content</label>
+                    <textarea id="qr-data" placeholder="Paste a URL, type some text, or enter contact info..." spellcheck="false"></textarea>
+                    <div class="char-count" id="char-count">0 characters</div>
+                </div>
+
+                <!-- Error Correction -->
+                <div class="field">
+                    <label class="field-label">Error Correction</label>
+                    <div class="toggle-row" id="ec-row">
+                        <button class="toggle-btn" data-ec="L">Low<span class="sub">7%</span></button>
+                        <button class="toggle-btn active" data-ec="M">Medium<span class="sub">15%</span></button>
+                        <button class="toggle-btn" data-ec="Q">Quartile<span class="sub">25%</span></button>
+                        <button class="toggle-btn" data-ec="H">High<span class="sub">30%</span></button>
+                    </div>
+                </div>
+
+                <!-- Colors -->
+                <div class="field">
+                    <label class="field-label">Theme</label>
+                    <div class="preset-grid" id="presets"></div>
+                    <div class="color-row">
+                        <div class="color-field">
+                            <input type="color" id="fg-color" value="#1a1a2e">
+                            <div class="color-meta">
+                                <div class="label">Foreground</div>
+                                <div class="hex" id="fg-hex">#1a1a2e</div>
+                            </div>
+                        </div>
+                        <div class="color-field">
+                            <input type="color" id="bg-color" value="#ffffff">
+                            <div class="color-meta">
+                                <div class="label">Background</div>
+                                <div class="hex" id="bg-hex">#ffffff</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Preview -->
+        <div class="card preview-card">
+            <div class="preview-frame" id="preview-frame">
+                <div class="preview-placeholder" id="placeholder">
+                    <div class="ghost">
+                        <span></span><span></span><span></span><span></span><span></span>
+                        <span></span><span style="opacity:.4"></span><span></span><span style="opacity:.4"></span><span></span>
+                        <span></span><span></span><span style="opacity:.4"></span><span></span><span></span>
+                        <span></span><span style="opacity:.4"></span><span></span><span style="opacity:.4"></span><span></span>
+                        <span></span><span></span><span></span><span></span><span></span>
+                    </div>
+                    <p>Type something to generate<br>your QR code</p>
+                </div>
+                <img id="preview-img" style="display:none" alt="QR Code preview">
+            </div>
+
+            <div class="dl-row">
+                <button class="dl-btn primary" id="dl-png" disabled>↓ Download PNG</button>
+                <button class="dl-btn secondary" id="dl-svg" disabled>↓ Download SVG</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>QR Studio &middot; Running on your local network &middot; No data is stored</p>
+        <p>Made for Koe</p>
+    </div>
+</div>
+
+<script>
+    // ── STATE ─────────────────────────────
+    let state = {
+        data: '',
+        ec: 'M',
+        fg: '#1a1a2e',
+        bg: '#ffffff',
+    };
+
+    let debounceTimer = null;
+
+    // ── PRESETS ───────────────────────────
+    const presets = [
+        { name: 'Classic',  fg: '#1a1a2e', bg: '#ffffff' },
+        { name: 'Ink',      fg: '#000000', bg: '#f5f1e8' },
+        { name: 'Espresso', fg: '#3c2415', bg: '#f0e6d3' },
+        { name: 'Ocean',    fg: '#0c3547', bg: '#e8f4f8' },
+        { name: 'Berry',    fg: '#5b1a3a', bg: '#fce4ec' },
+        { name: 'Forest',   fg: '#1b4332', bg: '#e8f5e9' },
+        { name: 'Midnight', fg: '#e0dcd4', bg: '#12110f' },
+        { name: 'Neon',     fg: '#39ff14', bg: '#0a0a0a' },
+        { name: 'Sunset',   fg: '#c0392b', bg: '#ffeaa7' },
+    ];
+
+    function renderPresets() {
+        const grid = document.getElementById('presets');
+        grid.innerHTML = presets.map((p, i) => `
+                <button class="preset-btn${p.fg === state.fg && p.bg === state.bg ? ' active' : ''}" data-idx="${i}">
+                    <div class="preset-swatch" style="background:${p.bg};border:1.5px solid ${p.fg}22">
+                        <div class="dot" style="background:${p.fg}"></div>
+                    </div>
+                    <span class="name">${p.name}</span>
+                </button>
+            `).join('');
+
+        grid.querySelectorAll('.preset-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const p = presets[btn.dataset.idx];
+                state.fg = p.fg;
+                state.bg = p.bg;
+                document.getElementById('fg-color').value = p.fg;
+                document.getElementById('bg-color').value = p.bg;
+                document.getElementById('fg-hex').textContent = p.fg;
+                document.getElementById('bg-hex').textContent = p.bg;
+                renderPresets();
+                updatePreview();
+            });
+        });
+    }
+
+    // ── PREVIEW ──────────────────────────
+    function updatePreview() {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+            const img = document.getElementById('preview-img');
+            const placeholder = document.getElementById('placeholder');
+            const dlPng = document.getElementById('dl-png');
+            const dlSvg = document.getElementById('dl-svg');
+
+            if (!state.data.trim()) {
+                img.style.display = 'none';
+                placeholder.style.display = 'block';
+                dlPng.disabled = true;
+                dlSvg.disabled = true;
+                return;
+            }
+
+            const params = new URLSearchParams({
+                data: state.data,
+                ec: state.ec,
+                fg: state.fg,
+                bg: state.bg,
+            });
+
+            img.src = `/preview?${params}`;
+            img.style.display = 'block';
+            placeholder.style.display = 'none';
+            dlPng.disabled = false;
+            dlSvg.disabled = false;
+        }, 200);
+    }
+
+    // ── DOWNLOAD ─────────────────────────
+    function download(format) {
+        if (!state.data.trim()) return;
+        const params = new URLSearchParams({
+            data: state.data,
+            ec: state.ec,
+            fg: state.fg,
+            bg: state.bg,
+            ...(format === 'png' ? { box_size: 30 } : {}),
+        });
+        window.open(`/generate/${format}?${params}`, '_blank');
+    }
+
+    // ── EVENT LISTENERS ──────────────────
+    document.getElementById('qr-data').addEventListener('input', (e) => {
+        state.data = e.target.value;
+        const len = state.data.length;
+        const counter = document.getElementById('char-count');
+        counter.textContent = `${len} character${len !== 1 ? 's' : ''}`;
+        counter.className = 'char-count' + (len > 200 ? ' error' : len > 150 ? ' warn' : '');
+        updatePreview();
+    });
+
+    document.getElementById('ec-row').addEventListener('click', (e) => {
+        const btn = e.target.closest('.toggle-btn');
+        if (!btn) return;
+        document.querySelectorAll('#ec-row .toggle-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        state.ec = btn.dataset.ec;
+        updatePreview();
+    });
+
+    document.getElementById('fg-color').addEventListener('input', (e) => {
+        state.fg = e.target.value;
+        document.getElementById('fg-hex').textContent = state.fg;
+        renderPresets();
+        updatePreview();
+    });
+
+    document.getElementById('bg-color').addEventListener('input', (e) => {
+        state.bg = e.target.value;
+        document.getElementById('bg-hex').textContent = state.bg;
+        renderPresets();
+        updatePreview();
+    });
+
+    document.getElementById('dl-png').addEventListener('click', () => download('png'));
+    document.getElementById('dl-svg').addEventListener('click', () => download('svg'));
+
+    // ── INIT ─────────────────────────────
+    renderPresets();
+</script>
+</body>
+</html>

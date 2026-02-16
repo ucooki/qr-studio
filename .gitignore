@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+
+# Virtual environments
+venv/
+.venv/
+
+# IDE/editor
+.idea/
+.vscode/
+
+# Local tool state
+.claude/
+
+# OS
+.DS_Store
+Thumbs.db
