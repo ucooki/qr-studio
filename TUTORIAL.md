@@ -188,7 +188,17 @@ fuser -k 8042/tcp
 
 ---
 
-## 6. Quick Start Checklist (for next time)
+## 6. What I Learned
+
+- Building and documenting FastAPI endpoints for file/image responses
+- Validating and constraining API inputs (`Query` defaults and bounds)
+- Connecting a lightweight frontend to backend generation endpoints
+- Handling WSL networking details for LAN access (port proxy + firewall)
+- Packaging a Python project to be reproducible with `requirements.txt`
+
+---
+
+## 7. Quick Start Checklist (for next time)
 
 1. Create project folder
 2. Create virtual environment: `python3 -m venv venv`
